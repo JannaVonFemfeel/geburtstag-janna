@@ -118,6 +118,8 @@ function showGuest(g) {
   const begleitung = [kids, kommt_mit].filter(Boolean).join(', ');
   if (begleitung) html += `<p class="guest-kids">👥 Kommt mit: ${begleitung}</p>`;
 
+ html += `<p style="font-size:13px;color:#888;margin-bottom:8px;">Hier rechne ich mit dir 🎉</p>`;
+ 
   html += `<div class="tags">`;
   schedule.forEach(s => html += `<span class="tag">${s}</span>`);
   html += `</div>`;
