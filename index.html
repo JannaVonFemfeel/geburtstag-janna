@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Janna wird 30 🎉</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #fdf9f4; color: #1a1a1a; min-height: 100vh; }
+  .hero { background: #f5a623; padding: 2.5rem 1.5rem 2rem; text-align: center; }
+  .hero .date { font-size: 13px; color: rgba(255,255,255,0.85); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px; }
+  .hero h1 { font-size: 28px; font-weight: 700; color: #fff; margin-bottom: 6px; }
+  .hero p { font-size: 14px; color: rgba(255,255,255,0.85); }
+  .container { max-width: 480px; margin: 0 auto; padding: 1.5rem; }
+  input[type="text"] { width: 100%; padding: 12px 16px; font-size: 16px; border: 1.5px solid #e0d8cc; border-radius: 12px; background: #fff; outline: none; transition: border-color 0.15s; }
+  input[type="text"]:focus { border-color: #f5a623; }
+  .suggestions { margin-top: 8px; }
+  .suggestion-btn { display: block; width: 100%; text-align: left; padding: 10px 14px; margin-bottom: 6px; background: #fff; border: 1px solid #e0d8cc; border-radius: 10px; font-size: 15px; cursor: pointer; transition: background 0.1s, border-color 0.1s; }
+  .suggestion-btn:hover { background: #fff8f0; border-color: #f5a623; }
+  .card { background: #fff; border-radius: 16px; border: 1px solid #e8e0d5; padding: 1.25rem; margin-top: 1rem; }
+  .guest-name { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  .guest-kids { font-size: 13px; color: #888; margin-bottom: 1rem; }
+  .section { border-top: 1px solid #f0ebe3; padding-top: 1rem; margin-top: 1rem; }
+  .section-label { font-size: 12px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tag { display: inline-block; font-size: 13px; padding: 4px 12px; border-radius: 20px; background: #f5f0ea; color: #5a4a3a; font-weight: 500; }
+  .tag.night { background: #e8f0fe; color: #1a56db; }
+  .alert { border-radius: 12px; padding: 12px 14px; margin-top: 10px; }
+  .alert.warning { background: #fff8e6; border: 1px solid #fcd34d; }
+  .alert.warning .alert-title { font-size: 13px; font-weight: 600; color: #92400e; margin-bottom: 2px; }
+  .alert.warning .alert-body { font-size: 13px; color: #92400e; }
+  .alert.info { background: #f0f7f4; border: 1px solid #6fcfa0; }
+  .alert.info .alert-body { font-size: 13px; color: #065f46; }
+  .contrib-row { font-size: 14px; margin-bottom: 4px; color: #333; }
+  .contrib-row span { font-weight: 600; }
+  .location { font-size: 12px; color: #aaa; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #f0ebe3; line-height: 1.6; }
+  .loading { text-align: center; padding: 2rem; color: #aaa; font-size: 14px; }
+  .error-msg { background: #fff0f0; border: 1px solid #fca5a5; border-radius: 12px; padding: 12px 16px; margin-top: 1rem; font-size: 14px; color: #b91c1c; }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <p class="date">12.–14. Juni 2026 · Stutensee-Friedrichstal</p>
+  <h1>Janna wird 30 🎉</h1>
+  <p>Gib deinen Namen ein und sieh deine Infos</p>
+</div>
+
+<div class="container">
+  <div id="loading" class="loading">Lade Gästeliste...</div>
+  <input type="text" id="nameInput" placeholder="Dein Name..." oninput="search()" autocomplete="off" style="display:none;" />
+  <div class="suggestions" id="suggestions"></div>
+  <div id="result"></div>
+</div>
+
+<script>
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwr5Ui3EEL4EX08rTKogUSiJYbcZ1eASyhZ-d1vb4vXxNT8bBSQqrFtxdbhwuDB5iEIzg/exec';
+let guests = [];
+
+async function loadSheet() {
+  const res = await fetch(SCRIPT_URL);
+  return await res.json();
+}
+
+function val(g, col) {
+  const v = (g[col] || '').toString().trim();
+  return v === '1' || v.toLowerCase() === 'true' || v === '1.0';
+}
+
+function str(g, col) {
+  return (g[col] || '').toString().trim();
+}
+
+function search() {
+  const q = document.getElementById('nameInput').value.trim().toLowerCase();
+  const sug = document.getElementById('suggestions');
+  const res = document.getElementById('result');
+  sug.innerHTML = '';
+  res.innerHTML = '';
+  if (q.length < 2) return;
+  const matches = guests.filter(g => (g['Name'] || '').toLowerCase().includes(q));
+  if (!matches.length) {
+    sug.innerHTML = '<p style="font-size:14px;color:#aaa;margin-top:8px;">Kein Name gefunden.</p>';
+    return;
+  }
+  matches.forEach(g => {
+    const kids = str(g, 'Kinder');
+    const btn = document.createElement('button');
+    btn.className = 'suggestion-btn';
+    btn.textContent = g['Name'] + (kids ? ' (+ ' + kids + ')' : '');
+    btn.onclick = () => { sug.innerHTML = ''; showGuest(g); };
+    sug.appendChild(btn);
+  });
+}
+
+function showGuest(g) {
+  document.getElementById('nameInput').value = g['Name'];
+  const kids = str(g, 'Kinder');
+  const kommt_mit = str(g, 'Kommt mit');
+  const schlaf = str(g, 'SCHLAFSACHEN MITBRINGEN');
+  const essen = str(g, 'ESSEN MITBRINGEN');
+  const spiele = str(g, 'SPIELE');
+
+  const schedule = [];
+  if (val(g, 'Freitag Abend')) schedule.push('Fr Abend');
+  if (val(g, 'Samstag frühstück')) schedule.push('Sa Frühstück');
+  if (val(g, 'Samstag tagsüber')) schedule.push('Sa tagsüber');
+  if (val(g, 'Samstag Abends')) schedule.push('Sa Abends');
+  if (val(g, 'Sonntag frühstück')) schedule.push('So Frühstück');
+
+  const nights = [];
+  if (val(g, 'Nacht Fr -> SA')) nights.push('Fr → Sa');
+  if (val(g, 'Nacht Sa -> So')) nights.push('Sa → So');
+
+  let html = `<div class="card">`;
+  html += `<p class="guest-name">${g['Name']}</p>`;
+
+  const begleitung = [kids, kommt_mit].filter(Boolean).join(', ');
+  if (begleitung) html += `<p class="guest-kids">👥 Kommt mit: ${begleitung}</p>`;
+
+  html += `<div class="tags">`;
+  schedule.forEach(s => html += `<span class="tag">${s}</span>`);
+  html += `</div>`;
+
+  if (nights.length) {
+    html += `<div class="section">`;
+    html += `<p class="section-label">🌙 Übernachtung</p>`;
+    html += `<div class="tags">`;
+    nights.forEach(n => html += `<span class="tag night">${n}</span>`);
+    html += `</div>`;
+
+    if (schlaf === 'Schlafsack + Spannbettuch') {
+      html += `<div class="alert warning">
+        <p class="alert-title">🎒 Bitte mitbringen</p>
+        <p class="alert-body">Schlafsack + Spannbettuch</p>
+      </div>`;
+    } else if (schlaf && schlaf !== '') {
+      html += `<div class="alert info">
+        <p class="alert-body">🚌 ${schlaf}</p>
+      </div>`;
+    }
+    html += `<div style="background:#f5f0ea;border-radius:12px;padding:12px 14px;margin-top:10px;font-size:13px;color:#5a4a3a;line-height:1.6;">
+      <p style="font-weight:600;margin-bottom:4px;">🛏️ Schlafen vor Ort</p>
+      <p>Es gibt ein Matratzenlager mit 30 Matratzen. Die können in bis zu fünf kleinen Räumen benutzt werden. Es wird also kuschelig.</p>
+      <p style="margin-top:6px;">Falls ihr lieber draußen schlafen wollt, bringt einfach noch ein Zelt & Isomatten mit.</p>
+    </div>`;
+    html += `</div>`;
+  }
+
+  if (essen || spiele) {
+    html += `<div class="section">`;
+    html += `<p class="section-label">🎁 Ich freue mich, wenn Du folgendes, wie in der Umfrage angegeben, mitbringst – vielen Dank!!</p>`;
+    if (essen) html += `<p class="contrib-row">🍽️ Essen: <span>${essen}</span></p>`;
+    if (spiele) html += `<p class="contrib-row">🎮 Mitbringen: <span>${spiele}</span></p>`;
+    html += `</div>`;
+  }
+
+  html += `<div class="section">
+    <p class="section-label">📅 Ablauf</p>
+    <p class="contrib-row">🍽️ <span>Freitag, 12. Juni</span><br>Ab 18:00 Uhr Anreise, Abendessen und ein paar Drinks.</p>
+    <p class="contrib-row" style="margin-top:8px;">🎉 <span>Samstag, 13. Juni</span><br>Ab 10:00 Uhr Frühstück und dann All Day Party Open End. (Spiele, Drinks, Snacks, Kuchen – kinderkompatibel!)</p>
+    <p class="contrib-row" style="margin-top:8px;">☀️ <span>Sonntag, 14. Juni</span><br>Frühstück & Abreise.</p>
+  </div>
+  <div class="section">
+    <p class="section-label">🚗 Anreise</p>
+    <p class="contrib-row">🚗 <span>Mit dem Auto:</span> Parkplätze sind vor Ort.</p>
+    <p class="contrib-row" style="margin-top:8px;">🚆 <span>Mit der Bahn:</span> Vom HBF Karlsruhe in ca. 30 min erreichbar. Mit S6 oder S9 bis zur Haltestelle „Friedrichstal St-Riquier-Platz" und dann nochmal 20 min zu Fuß — oder einfach anrufen, dann versuchen wir euch dort abzuholen!</p>
+  </div>
+  <p class="location">📍 Pfadfinderheim Friedrichsthal · Spöcker Weg 2 · 76297 Stutensee-Friedrichstal</p>`;
+  html += `</div>`;
+  document.getElementById('result').innerHTML = html;
+}
+
+loadSheet().then(data => {
+  guests = data;
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('nameInput').style.display = 'block';
+  document.getElementById('nameInput').focus();
+}).catch(err => {
+  document.getElementById('loading').innerHTML = '';
+  document.getElementById('result').innerHTML = `<div class="error-msg">⚠️ Gästeliste konnte nicht geladen werden. Bitte stelle sicher, dass das Google Sheet öffentlich geteilt ist.</div>`;
+  console.error(err);
+});
+</script>
+</body>
+</html>
